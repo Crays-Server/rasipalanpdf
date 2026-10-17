@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+output/
+tmp/
+asset/body-bold.ttf
+asset/body-bold.source
+.streamlit/secrets.toml
+.env
+reference.pdf
+tests/
+requirements-dev.txt
+Raw.docx
+asset/Cover page.jpg
+asset/link
