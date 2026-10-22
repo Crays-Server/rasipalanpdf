@@ -72,7 +72,7 @@ def main():
             banners={str(i):st.selectbox(name,[0,1,2],index=1 if i%2==0 else 2,format_func=lambda n:'No banner'if n==0 else f'Banner {n}',key=f'banner_rasi_{i}') for i,name in enumerate(engine.NAMES)}
         with st.expander('Zodiac subtitles (editable)'):
             default=json.loads((engine.ASSET/'zodiac_subtitles.json').read_text(encoding='utf-8'))
-            st.caption('Extracted from the reference PDF. Review spelling against the reference; clear any subtitle you do not need.')
+            st.caption('Fallback subtitles from the reference PDF. A parenthesized line pasted directly after a rasi heading replaces its fallback and prints once in red. Clear any fallback you do not need.')
             subtitles=[st.text_input(name,value=default[i] if i<len(default)else '',key=f'subtitle_{i}')for i,name in enumerate(engine.NAMES)]
         with st.expander('Optional links',expanded=False):
             links_enabled=st.checkbox('Enable clickable PDF links',value=True)
@@ -81,7 +81,7 @@ def main():
     options={'font_size':body_size,'line_height':line_height,'heading_font':heading_font,'cover':cover,'back':back,'page_numbers':page_numbers,
              'issue_label':issue_label,'cover_date_size':cover_date_size,'banners':banners,'subtitles':subtitles,'links_enabled':links_enabled}
     article=st.session_state['article'];revision=st.session_state['revision']
-    signature=('rasi-v2-cover-date',article,options,crops,links,[(key,hashlib.sha256(value).hexdigest())for key,value in sorted(overrides.items())])
+    signature=('rasi-v3-pasted-subtitle',article,options,crops,links,[(key,hashlib.sha256(value).hexdigest())for key,value in sorted(overrides.items())])
     fingerprint=hashlib.sha256(repr(signature).encode()).hexdigest()
     force=st.session_state.pop('force_refresh',False)
     if (auto or force) and fingerprint!=st.session_state.get('preview_fingerprint'):

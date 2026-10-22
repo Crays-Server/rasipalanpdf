@@ -224,6 +224,16 @@ def generate(raw,options=None,overrides=None,crops=None,links=None):
     indices=[s[1] for s in starts]
     if len(set(indices))!=len(indices):raise ValueError('A rasi heading appears more than once. Keep one section for each rasi.')
     labels=[];placements=[];subtitles=options.get('subtitles',[])
+    # A parenthesized line immediately after a zodiac is its pasted subtitle,
+    # not a body paragraph. It replaces the sidebar fallback without altering
+    # source indices, so it stays editable and cannot trigger the banner.
+    pasted_subtitles={}
+    for position,_ in starts:
+        if position+1<len(blocks):
+            value=blocks[position+1]['text'].strip()
+            if value.startswith('(') and value.endswith(')'):
+                pasted_subtitles[position]=position+1
+    subtitle_indices=set(pasted_subtitles.values())
     with fitz.open() as doc:
         cover=frame(doc,labels,'Front cover',options,overrides,crops,links)
         if options.get('cover',True):
@@ -256,10 +266,12 @@ def generate(raw,options=None,overrides=None,crops=None,links=None):
                 if banner_pending is not None:add_banner(banner_pending)
                 active_rasi=rasi;banner_pending=rasi;body_seen=False;star_mode=False
                 if page is None:page=new_page();y=CONTENT.y0
-                header_height=182 if rasi<len(subtitles) and subtitles[rasi] else 151
+                header_height=182 if index in pasted_subtitles or (rasi<len(subtitles) and subtitles[rasi]) else 151
                 if y+header_height+56>CONTENT.y1:page=new_page();y=CONTENT.y0
                 image(page,f'zodiac{rasi+1}',fitz.Rect(251.5,y,360.5,y+109),overrides,crops,max_side=240);y+=112
                 role='rasi';block=dict(block,align='center')
+            elif index in subtitle_indices:
+                role='subtitle';block=dict(block,align='center')
             else:
                 if banner_pending is not None and body_seen:add_banner(banner_pending);banner_pending=None
                 if block['text'].startswith('அதிர்ஷ்டம் அளிப்பவை'):star_mode=True
@@ -293,7 +305,7 @@ def generate(raw,options=None,overrides=None,crops=None,links=None):
                 if not more:break
                 page=new_page();y=CONTENT.y0
             y+=2 if role=='lucky' else 10 if role in('subheading','rasi')else 12
-            if rasi is not None and rasi<len(subtitles) and subtitles[rasi]:
+            if rasi is not None and index not in pasted_subtitles and rasi<len(subtitles) and subtitles[rasi]:
                 value=subtitles[rasi];sb={'text':value,'runs':[{'text':value,'bold':False}], 'align':'center'}
                 st,_,_,_,_=story_for(sb,options,'subtitle');more,filled=st.place(fitz.Rect(72,y,540,min(y+80,690)))
                 if more:raise ValueError(f'The subtitle for {NAMES[rasi]} is too long.')
